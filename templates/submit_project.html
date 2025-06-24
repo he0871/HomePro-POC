@@ -1,0 +1,267 @@
+{% extends "base.html" %}
+
+{% block title %}Submit Project - HomePro{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <!-- Header -->
+            <div class="text-center mb-5">
+                <h1 class="h3 fw-bold">Submit Your Project</h1>
+                <p class="text-muted">Describe your home improvement project using voice, video, or text</p>
+            </div>
+            
+            <!-- Submission Methods -->
+            <div class="card shadow">
+                <div class="card-body p-4">
+                    <!-- Method Selection -->
+                    <div class="mb-4">
+                        <h5 class="mb-3">Choose your submission method:</h5>
+                        <div class="row g-3">
+                            <div class="col-md-4">
+                                <input type="radio" class="btn-check" name="submission_method" id="audio_method" value="audio">
+                                <label class="btn btn-outline-primary w-100 p-3" for="audio_method">
+                                    <i class="fas fa-microphone d-block mb-2" style="font-size: 2rem;"></i>
+                                    <strong>Audio</strong>
+                                    <small class="d-block text-muted">Record your description</small>
+                                </label>
+                            </div>
+                            <div class="col-md-4">
+                                <input type="radio" class="btn-check" name="submission_method" id="video_method" value="video">
+                                <label class="btn btn-outline-primary w-100 p-3" for="video_method">
+                                    <i class="fas fa-video d-block mb-2" style="font-size: 2rem;"></i>
+                                    <strong>Video</strong>
+                                    <small class="d-block text-muted">Show and tell your project</small>
+                                </label>
+                            </div>
+                            <div class="col-md-4">
+                                <input type="radio" class="btn-check" name="submission_method" id="text_method" value="text" checked>
+                                <label class="btn btn-outline-primary w-100 p-3" for="text_method">
+                                    <i class="fas fa-keyboard d-block mb-2" style="font-size: 2rem;"></i>
+                                    <strong>Text</strong>
+                                    <small class="d-block text-muted">Type your description</small>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <form method="POST" enctype="multipart/form-data" id="projectForm">
+                        <!-- File Upload Section -->
+                        <div id="file_upload_section" style="display: none;">
+                            <div class="mb-4">
+                                <label for="file" class="form-label">Upload File</label>
+                                <div class="upload-area border-2 border-dashed rounded p-4 text-center" id="uploadArea">
+                                    <i class="fas fa-cloud-upload-alt fa-3x text-muted mb-3"></i>
+                                    <h6>Drag and drop your file here</h6>
+                                    <p class="text-muted mb-3">or click to browse</p>
+                                    <input type="file" class="form-control" id="file" name="file" accept=".mp3,.wav,.mp4,.mov" style="display: none;">
+                                    <button type="button" class="btn btn-outline-primary" onclick="document.getElementById('file').click()">
+                                        Choose File
+                                    </button>
+                                </div>
+                                <div class="form-text">
+                                    <strong>Audio:</strong> MP3, WAV (max 10MB) | 
+                                    <strong>Video:</strong> MP4, MOV (max 50MB)
+                                </div>
+                                <div id="file_info" class="mt-2" style="display: none;">
+                                    <div class="alert alert-info">
+                                        <i class="fas fa-file me-2"></i>
+                                        <span id="file_name"></span>
+                                        <span class="float-end">
+                                            <span id="file_size"></span>
+                                            <button type="button" class="btn btn-sm btn-outline-danger ms-2" onclick="removeFile()">
+                                                <i class="fas fa-times"></i>
+                                            </button>
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Text Description Section -->
+                        <div id="text_description_section">
+                            <div class="mb-4">
+                                <label for="text_description" class="form-label">Project Description</label>
+                                <textarea class="form-control" id="text_description" name="text_description" rows="6" 
+                                          placeholder="Describe your project in detail. Include:
+• What type of work needs to be done?
+• What's the scope of the project?
+• What's your budget range?
+• When do you need it completed?
+• Any specific requirements or preferences?
+
+Example: I need to renovate my kitchen. The cabinets are old and need replacement, and I'd like to update the countertops to granite. My budget is around $15,000 to $20,000. I'm flexible on timing but would prefer to have it done within 2 months."></textarea>
+                                <div class="form-text">Be as detailed as possible to help our AI understand your project requirements.</div>
+                            </div>
+                        </div>
+                        
+                        <!-- AI Processing Info -->
+                        <div class="alert alert-info">
+                            <h6><i class="fas fa-robot me-2"></i>AI Processing</h6>
+                            <p class="mb-0">Our AI will analyze your submission to extract project details like type, scope, budget, timeline, and location. You'll be able to review and edit these details before posting your project.</p>
+                        </div>
+                        
+                        <!-- Tips Section -->
+                        <div class="card bg-light mb-4">
+                            <div class="card-body">
+                                <h6><i class="fas fa-lightbulb me-2"></i>Tips for Better Results</h6>
+                                <ul class="mb-0 small">
+                                    <li>Be specific about the type of work (plumbing, electrical, renovation, etc.)</li>
+                                    <li>Mention your budget range if you have one in mind</li>
+                                    <li>Include timeline preferences (urgent, flexible, specific dates)</li>
+                                    <li>Describe the current condition and what you want to achieve</li>
+                                    <li>Mention any special requirements or constraints</li>
+                                </ul>
+                            </div>
+                        </div>
+                        
+                        <div class="d-flex justify-content-between">
+                            <a href="{{ url_for('dashboard') }}" class="btn btn-outline-secondary">
+                                <i class="fas fa-arrow-left me-2"></i>Back to Dashboard
+                            </a>
+                            <button type="submit" class="btn btn-primary" id="submitBtn">
+                                <i class="fas fa-magic me-2"></i>Process with AI
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            
+            <!-- Example Projects -->
+            <div class="mt-5">
+                <h5 class="mb-3">Example Project Descriptions</h5>
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <div class="card border-start border-primary border-3">
+                            <div class="card-body">
+                                <h6 class="text-primary">Kitchen Renovation</h6>
+                                <p class="small mb-0">"I want to completely renovate my 10x12 kitchen. The cabinets are from the 1980s and need to be replaced. I'd like granite countertops, new appliances, and modern lighting. Budget is $25,000-$35,000. Timeline is flexible but prefer completion before the holidays."</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="card border-start border-success border-3">
+                            <div class="card-body">
+                                <h6 class="text-success">Bathroom Repair</h6>
+                                <p class="small mb-0">"My bathroom faucet is leaking and the toilet keeps running. I also noticed some loose tiles around the shower. Looking for a reliable plumber to fix these issues. Budget around $500-$800. Need it done ASAP."</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const audioMethod = document.getElementById('audio_method');
+    const videoMethod = document.getElementById('video_method');
+    const textMethod = document.getElementById('text_method');
+    const fileUploadSection = document.getElementById('file_upload_section');
+    const textDescriptionSection = document.getElementById('text_description_section');
+    const fileInput = document.getElementById('file');
+    const uploadArea = document.getElementById('uploadArea');
+    const submitBtn = document.getElementById('submitBtn');
+    
+    function updateSubmissionMethod() {
+        if (audioMethod.checked || videoMethod.checked) {
+            fileUploadSection.style.display = 'block';
+            textDescriptionSection.style.display = 'none';
+            
+            // Update file input accept attribute
+            if (audioMethod.checked) {
+                fileInput.accept = '.mp3,.wav';
+            } else {
+                fileInput.accept = '.mp4,.mov';
+            }
+        } else {
+            fileUploadSection.style.display = 'none';
+            textDescriptionSection.style.display = 'block';
+        }
+    }
+    
+    audioMethod.addEventListener('change', updateSubmissionMethod);
+    videoMethod.addEventListener('change', updateSubmissionMethod);
+    textMethod.addEventListener('change', updateSubmissionMethod);
+    
+    // File upload handling
+    fileInput.addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        if (file) {
+            displayFileInfo(file);
+        }
+    });
+    
+    // Drag and drop
+    uploadArea.addEventListener('dragover', function(e) {
+        e.preventDefault();
+        uploadArea.classList.add('border-primary');
+    });
+    
+    uploadArea.addEventListener('dragleave', function(e) {
+        e.preventDefault();
+        uploadArea.classList.remove('border-primary');
+    });
+    
+    uploadArea.addEventListener('drop', function(e) {
+        e.preventDefault();
+        uploadArea.classList.remove('border-primary');
+        
+        const files = e.dataTransfer.files;
+        if (files.length > 0) {
+            fileInput.files = files;
+            displayFileInfo(files[0]);
+        }
+    });
+    
+    function displayFileInfo(file) {
+        const fileInfo = document.getElementById('file_info');
+        const fileName = document.getElementById('file_name');
+        const fileSize = document.getElementById('file_size');
+        
+        fileName.textContent = file.name;
+        fileSize.textContent = formatFileSize(file.size);
+        fileInfo.style.display = 'block';
+    }
+    
+    function formatFileSize(bytes) {
+        if (bytes === 0) return '0 Bytes';
+        const k = 1024;
+        const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+        const i = Math.floor(Math.log(bytes) / Math.log(k));
+        return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+    }
+    
+    // Form validation
+    document.getElementById('projectForm').addEventListener('submit', function(e) {
+        const textDescription = document.getElementById('text_description').value.trim();
+        const file = fileInput.files[0];
+        
+        if (textMethod.checked && !textDescription) {
+            e.preventDefault();
+            alert('Please provide a project description.');
+            return;
+        }
+        
+        if ((audioMethod.checked || videoMethod.checked) && !file) {
+            e.preventDefault();
+            alert('Please upload a file.');
+            return;
+        }
+        
+        // Show loading state
+        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Processing...';
+        submitBtn.disabled = true;
+    });
+});
+
+function removeFile() {
+    document.getElementById('file').value = '';
+    document.getElementById('file_info').style.display = 'none';
+}
+</script>
+{% endblock %}

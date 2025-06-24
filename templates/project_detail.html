@@ -1,0 +1,536 @@
+{% extends "base.html" %}
+
+{% block title %}{{ project.title }} - HomePro{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <!-- Breadcrumb -->
+    <nav aria-label="breadcrumb" class="mb-4">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{{ url_for('dashboard') }}">Dashboard</a></li>
+            <li class="breadcrumb-item active">{{ project.title }}</li>
+        </ol>
+    </nav>
+    
+    <div class="row">
+        <!-- Project Details -->
+        <div class="col-lg-8">
+            <div class="card shadow mb-4">
+                <div class="card-body">
+                    <!-- Project Header -->
+                    <div class="d-flex justify-content-between align-items-start mb-4">
+                        <div>
+                            <h1 class="h3 mb-2">{{ project.title }}</h1>
+                            <div class="d-flex align-items-center gap-3">
+                                <span class="badge bg-primary fs-6">{{ project.project_type }}</span>
+                                <span class="badge {% if project.status == 'Active' %}bg-success{% elif project.status == 'Closed' %}bg-secondary{% else %}bg-warning{% endif %} fs-6">
+                                    {{ project.status }}
+                                </span>
+                                <small class="text-muted">
+                                    <i class="fas fa-calendar me-1"></i>Posted {{ project.created_at.strftime('%B %d, %Y') }}
+                                </small>
+                            </div>
+                        </div>
+                        {% if current_user.user_type == 'homeowner' and current_user.id == project.homeowner_id and project.status == 'Active' %}
+                            <button class="btn btn-outline-danger" onclick="closeProject({{ project.id }})">
+                                <i class="fas fa-times me-2"></i>Close Project
+                            </button>
+                        {% endif %}
+                    </div>
+                    
+                    <!-- Project Info Grid -->
+                    <div class="row g-4 mb-4">
+                        <div class="col-md-6">
+                            <div class="d-flex align-items-center">
+                                <div class="bg-primary bg-opacity-10 rounded-circle p-3 me-3">
+                                    <i class="fas fa-map-marker-alt text-primary"></i>
+                                </div>
+                                <div>
+                                    <h6 class="mb-1">Location</h6>
+                                    <p class="mb-0 text-muted">{{ project.location }}</p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <div class="d-flex align-items-center">
+                                <div class="bg-success bg-opacity-10 rounded-circle p-3 me-3">
+                                    <i class="fas fa-dollar-sign text-success"></i>
+                                </div>
+                                <div>
+                                    <h6 class="mb-1">Budget</h6>
+                                    <p class="mb-0 text-muted">
+                                        {% if project.budget_min and project.budget_max %}
+                                            ${{ "%.0f"|format(project.budget_min) }} - ${{ "%.0f"|format(project.budget_max) }}
+                                        {% elif project.budget_max %}
+                                            Up to ${{ "%.0f"|format(project.budget_max) }}
+                                        {% elif project.budget_min %}
+                                            Starting at ${{ "%.0f"|format(project.budget_min) }}
+                                        {% else %}
+                                            Negotiable
+                                        {% endif %}
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <div class="d-flex align-items-center">
+                                <div class="bg-info bg-opacity-10 rounded-circle p-3 me-3">
+                                    <i class="fas fa-clock text-info"></i>
+                                </div>
+                                <div>
+                                    <h6 class="mb-1">Timeline</h6>
+                                    <p class="mb-0 text-muted">{{ project.timeline or 'Flexible' }}</p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <div class="d-flex align-items-center">
+                                <div class="bg-warning bg-opacity-10 rounded-circle p-3 me-3">
+                                    <i class="fas fa-handshake text-warning"></i>
+                                </div>
+                                <div>
+                                    <h6 class="mb-1">Bids Received</h6>
+                                    <p class="mb-0 text-muted">{{ bids|length }} contractor{{ 's' if bids|length != 1 else '' }}</p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <div class="d-flex align-items-center">
+                                <div class="{% if project.status == 'Active' %}bg-primary{% elif project.status == 'Completed' %}bg-success{% elif project.status == 'Closed' %}bg-secondary{% else %}bg-info{% endif %} bg-opacity-10 rounded-circle p-3 me-3">
+                                    <i class="fas {% if project.status == 'Active' %}fa-play{% elif project.status == 'Completed' %}fa-check-circle{% elif project.status == 'Closed' %}fa-lock{% else %}fa-info-circle{% endif %} {% if project.status == 'Active' %}text-primary{% elif project.status == 'Completed' %}text-success{% elif project.status == 'Closed' %}text-secondary{% else %}text-info{% endif %}"></i>
+                                </div>
+                                <div>
+                                    <h6 class="mb-1">Status</h6>
+                                    <p class="mb-0">
+                                        <span class="badge {% if project.status == 'Active' %}bg-primary{% elif project.status == 'Completed' %}bg-success{% elif project.status == 'Closed' %}bg-secondary{% else %}bg-info{% endif %}">{{ project.status }}</span>
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Project Description -->
+                    <div class="mb-4">
+                        <h5><i class="fas fa-file-alt me-2"></i>Project Description</h5>
+                        <div class="bg-light p-4 rounded">
+                            <p class="mb-0">{{ project.description }}</p>
+                        </div>
+                    </div>
+                    
+                    <!-- Homeowner Info -->
+                    <div class="border-top pt-4">
+                        <h6><i class="fas fa-user me-2"></i>Posted by</h6>
+                        <div class="d-flex align-items-center">
+                            <div class="bg-secondary rounded-circle d-flex align-items-center justify-content-center me-3" style="width: 50px; height: 50px;">
+                                <i class="fas fa-user text-white"></i>
+                            </div>
+                            <div>
+                                <strong>{{ project.homeowner.first_name }} {{ project.homeowner.last_name[0] }}.</strong>
+                                <br>
+                                <small class="text-muted">{{ project.homeowner.location or 'Location not specified' }}</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Sidebar -->
+        <div class="col-lg-4">
+            <!-- Bid Submission (for contractors) -->
+            {% if current_user.user_type == 'contractor' and project.status == 'Active' %}
+                {% set user_bid = bids|selectattr('contractor_id', 'equalto', current_user.id)|first %}
+                {% if not user_bid %}
+                    <div class="card shadow mb-4">
+                        <div class="card-header bg-primary text-white">
+                            <h5 class="mb-0"><i class="fas fa-handshake me-2"></i>Submit Your Bid</h5>
+                        </div>
+                        <div class="card-body">
+                            <form method="POST" action="{{ url_for('submit_bid', project_id=project.id) }}">
+                                <div class="mb-3">
+                                    <label for="amount" class="form-label">Bid Amount *</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text">$</span>
+                                        <input type="number" class="form-control" id="amount" name="amount" required min="1" step="0.01">
+                                    </div>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label for="timeline" class="form-label">Timeline *</label>
+                                    <input type="text" class="form-control" id="timeline" name="timeline" 
+                                           placeholder="e.g., 2 weeks, 1 month" required>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label for="description" class="form-label">Work Description *</label>
+                                    <textarea class="form-control" id="description" name="description" rows="4" 
+                                              placeholder="Describe your approach, materials, and what's included in your bid" required></textarea>
+                                </div>
+                                
+                                <button type="submit" class="btn btn-primary w-100">
+                                    <i class="fas fa-paper-plane me-2"></i>Submit Bid
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                {% else %}
+                    <div class="card shadow mb-4 border-success">
+                        <div class="card-header bg-success text-white">
+                            <h5 class="mb-0"><i class="fas fa-check me-2"></i>Your Bid</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="text-center mb-3">
+                                <h4 class="text-success">${{ "%.0f"|format(user_bid.amount) }}</h4>
+                                <p class="mb-0">Timeline: {{ user_bid.timeline }}</p>
+                            </div>
+                            <div class="alert alert-info">
+                                <strong>Status:</strong> {{ user_bid.status }}
+                            </div>
+                            <p class="small">{{ user_bid.description }}</p>
+                            <small class="text-muted">Submitted {{ user_bid.created_at.strftime('%m/%d/%Y at %I:%M %p') }}</small>
+                        </div>
+                    </div>
+                {% endif %}
+            {% endif %}
+            
+            <!-- Project Stats -->
+            <div class="card shadow mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-chart-bar me-2"></i>Project Stats</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row g-3 text-center">
+                        <div class="col-6">
+                            <div class="border rounded p-3">
+                                <h4 class="text-primary mb-1">{{ bids|length }}</h4>
+                                <small class="text-muted">Total Bids</small>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="border rounded p-3">
+                                <h4 class="text-success mb-1">
+                                    {% if bids %}
+                                        ${{ "%.0f"|format(bids|map(attribute='amount')|min) }}
+                                    {% else %}
+                                        -
+                                    {% endif %}
+                                </h4>
+                                <small class="text-muted">Lowest Bid</small>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="border rounded p-3">
+                                <h4 class="text-warning mb-1">
+                                    {% if bids %}
+                                        ${{ "%.0f"|format(bids|map(attribute='amount')|list|sum / bids|length) }}
+                                    {% else %}
+                                        -
+                                    {% endif %}
+                                </h4>
+                                <small class="text-muted">Average Bid</small>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="border rounded p-3">
+                                <h4 class="text-info mb-1">{{ (project.created_at.now() - project.created_at).days }}</h4>
+                                <small class="text-muted">Days Active</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Quick Actions -->
+            <div class="card shadow">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-tools me-2"></i>Quick Actions</h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        {% set accepted_bid = bids|selectattr('status', 'equalto', 'Accepted')|first %}
+                        
+                        {% if current_user.user_type == 'homeowner' and current_user.id == project.homeowner_id %}
+                            {% if accepted_bid and project.status == 'Active' %}
+                                <button class="btn btn-success" onclick="completeProject({{ project.id }})">
+                                    <i class="fas fa-check-circle me-2"></i>Mark as Completed
+                                </button>
+                            {% endif %}
+                            <button class="btn btn-outline-primary" onclick="contactContractors()">
+                                <i class="fas fa-envelope me-2"></i>Contact Contractors
+                            </button>
+                            <button class="btn btn-outline-info" onclick="shareProject()">
+                                <i class="fas fa-share me-2"></i>Share Project
+                            </button>
+                        {% else %}
+                            {% if accepted_bid and current_user.id == accepted_bid.contractor_id and project.status == 'Active' %}
+                                <button class="btn btn-success" onclick="completeProject({{ project.id }})">
+                                    <i class="fas fa-check-circle me-2"></i>Mark as Completed
+                                </button>
+                            {% endif %}
+                            <button class="btn btn-outline-primary" onclick="contactHomeowner()">
+                                <i class="fas fa-envelope me-2"></i>Contact Homeowner
+                            </button>
+                            <button class="btn btn-outline-info" onclick="saveProject()">
+                                <i class="fas fa-bookmark me-2"></i>Save Project
+                            </button>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Bids Section -->
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card shadow">
+                <div class="card-header">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0"><i class="fas fa-handshake me-2"></i>Bids{% if show_bids %} ({{ bids|length }}){% endif %}</h5>
+                        {% if show_bids and bids %}
+                        <div class="btn-group btn-group-sm">
+                            <button class="btn btn-outline-primary" onclick="sortBids('amount')">
+                                <i class="fas fa-sort-amount-down me-1"></i>Price
+                            </button>
+                            <button class="btn btn-outline-primary" onclick="sortBids('date')">
+                                <i class="fas fa-sort me-1"></i>Date
+                            </button>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="card-body">
+                    {% if not current_user.is_authenticated %}
+                        <div class="text-center py-4">
+                            <i class="fas fa-lock fa-3x text-muted mb-3"></i>
+                            <h5 class="text-muted">Login Required</h5>
+                            <p class="text-muted">Please log in to view contractor bids and responses for this project.</p>
+                            <a href="{{ url_for('login') }}" class="btn btn-primary">
+                                <i class="fas fa-sign-in-alt me-2"></i>Login to View Bids
+                            </a>
+                        </div>
+                    {% elif show_bids and bids %}
+                        <div class="row g-4" id="bidsContainer">
+                            {% for bid in bids %}
+                            <div class="col-md-6 bid-item" data-amount="{{ bid.amount }}" data-date="{{ bid.created_at.timestamp() }}">
+                                <div class="card bid-card h-100">
+                                    <div class="card-body">
+                                        <div class="d-flex justify-content-between align-items-start mb-3">
+                                            <div class="d-flex align-items-center">
+                                                <div class="bg-primary rounded-circle d-flex align-items-center justify-content-center me-3" style="width: 40px; height: 40px;">
+                                                    <i class="fas fa-user text-white"></i>
+                                                </div>
+                                                <div>
+                                                    <h6 class="mb-0">{{ bid.contractor.first_name }} {{ bid.contractor.last_name }}</h6>
+                                                    <small class="text-muted">{{ bid.contractor.location or 'Location not specified' }}</small>
+                                                </div>
+                                            </div>
+                                            <span class="badge {% if bid.status == 'Accepted' %}bg-success{% elif bid.status == 'Rejected' %}bg-danger{% else %}bg-warning{% endif %}">
+                                                {{ bid.status }}
+                                            </span>
+                                        </div>
+                                        
+                                        <div class="row g-2 mb-3">
+                                            <div class="col-6">
+                                                <strong class="text-success">${{ "%.0f"|format(bid.amount) }}</strong>
+                                                <br>
+                                                <small class="text-muted">Bid Amount</small>
+                                            </div>
+                                            <div class="col-6">
+                                                <strong>{{ bid.timeline }}</strong>
+                                                <br>
+                                                <small class="text-muted">Timeline</small>
+                                            </div>
+                                        </div>
+                                        
+                                        <p class="card-text">{{ bid.description }}</p>
+                                        
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <small class="text-muted">
+                                                <i class="fas fa-calendar me-1"></i>{{ bid.created_at.strftime('%m/%d/%Y') }}
+                                            </small>
+                                            
+                                            {% if current_user.user_type == 'homeowner' and current_user.id == project.homeowner_id and bid.status == 'Submitted' %}
+                                                <div class="btn-group btn-group-sm">
+                                                    <button class="btn btn-outline-success" onclick="acceptBid({{ bid.id }})">
+                                                        <i class="fas fa-check"></i>
+                                                    </button>
+                                                    <button class="btn btn-outline-danger" onclick="rejectBid({{ bid.id }})">
+                                                        <i class="fas fa-times"></i>
+                                                    </button>
+                                                    <button class="btn btn-outline-primary" onclick="contactContractor({{ bid.contractor.id }})">
+                                                        <i class="fas fa-envelope"></i>
+                                                    </button>
+                                                </div>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="text-center py-4">
+                            <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
+                            <h5 class="text-muted">No bids yet</h5>
+                            <p class="text-muted">Be the first contractor to bid on this project!</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Close Project Modal -->
+<div class="modal fade" id="closeProjectModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Close Project</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to close this project? This action cannot be undone and contractors will no longer be able to submit bids.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <form id="closeProjectForm" method="POST" style="display: inline;">
+                    <button type="submit" class="btn btn-danger">Close Project</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function closeProject(projectId) {
+    const form = document.getElementById('closeProjectForm');
+    form.action = `/close_project/${projectId}`;
+    const modal = new bootstrap.Modal(document.getElementById('closeProjectModal'));
+    modal.show();
+}
+
+function sortBids(criteria) {
+    const container = document.getElementById('bidsContainer');
+    const bids = Array.from(container.children);
+    
+    bids.sort((a, b) => {
+        if (criteria === 'amount') {
+            return parseFloat(a.dataset.amount) - parseFloat(b.dataset.amount);
+        } else {
+            return parseFloat(b.dataset.date) - parseFloat(a.dataset.date);
+        }
+    });
+    
+    bids.forEach(bid => container.appendChild(bid));
+}
+
+function acceptBid(bidId) {
+    if (confirm('Are you sure you want to accept this bid? This will reject all other bids.')) {
+        fetch(`/accept_bid/${bidId}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert(data.message);
+                location.reload(); // Refresh the page to show updated status
+            } else {
+                alert('Error: ' + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('An error occurred while accepting the bid.');
+        });
+    }
+}
+
+function rejectBid(bidId) {
+    if (confirm('Are you sure you want to reject this bid?')) {
+        fetch(`/reject_bid/${bidId}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert(data.message);
+                location.reload(); // Refresh the page to show updated status
+            } else {
+                alert('Error: ' + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('An error occurred while rejecting the bid.');
+        });
+    }
+}
+
+function completeProject(projectId) {
+    if (confirm('Are you sure you want to mark this project as completed? This indicates that all work has been finished.')) {
+        fetch(`/complete_project/${projectId}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert(data.message);
+                location.reload(); // Refresh the page to show updated status
+            } else {
+                alert('Error: ' + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('An error occurred while completing the project.');
+        });
+    }
+}
+
+function contactContractor(contractorId) {
+    alert('Contact contractor functionality would be implemented here');
+}
+
+function contactHomeowner() {
+    alert('Contact homeowner functionality would be implemented here');
+}
+
+function contactContractors() {
+    alert('Contact contractors functionality would be implemented here');
+}
+
+function shareProject() {
+    if (navigator.share) {
+        navigator.share({
+            title: '{{ project.title }}',
+            text: '{{ project.description|truncate(100) }}',
+            url: window.location.href
+        });
+    } else {
+        navigator.clipboard.writeText(window.location.href);
+        alert('Project link copied to clipboard!');
+    }
+}
+
+function saveProject() {
+    alert('Save project functionality would be implemented here');
+}
+</script>
+{% endblock %}

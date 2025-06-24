@@ -1,0 +1,306 @@
+{% extends "base.html" %}
+
+{% block title %}Review Project - HomePro{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <!-- Header -->
+            <div class="text-center mb-4">
+                <h1 class="h3 fw-bold">Review Your Project</h1>
+                <p class="text-muted">Our AI has processed your submission. Please review and edit the details before posting.</p>
+            </div>
+            
+            <!-- AI Processing Results -->
+            <div class="card shadow mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0"><i class="fas fa-robot me-2"></i>AI Analysis Results</h5>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-success">
+                        <i class="fas fa-check-circle me-2"></i>
+                        <strong>Processing Complete!</strong> Our AI has analyzed your submission and extracted the following project details.
+                    </div>
+                    
+                    {% if ai_results.transcribed_text %}
+                    <div class="mb-3">
+                        <h6><i class="fas fa-quote-left me-2"></i>Transcribed Text</h6>
+                        <div class="bg-light p-3 rounded">
+                            <em>"{{ ai_results.transcribed_text }}"</em>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <!-- Editable Project Form -->
+            <div class="card shadow">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-edit me-2"></i>Project Details</h5>
+                    <small class="text-muted">Review and edit the information below</small>
+                </div>
+                <div class="card-body">
+                    <form method="POST" action="{{ url_for('confirm_project') }}">
+                        <div class="row g-3">
+                            <!-- Project Title -->
+                            <div class="col-12">
+                                <label for="title" class="form-label">Project Title *</label>
+                                <input type="text" class="form-control" id="title" name="title" 
+                                       value="{{ ai_results.title or (ai_results.project_type + ' Project') }}" required>
+                                <div class="form-text">Give your project a clear, descriptive title</div>
+                            </div>
+                            
+                            <!-- Project Type -->
+                            <div class="col-md-6">
+                                <label for="project_type" class="form-label">Project Type *</label>
+                                <select class="form-select" id="project_type" name="project_type" required>
+                                    <option value="Kitchen Renovation" {% if ai_results.project_type == 'Kitchen Renovation' %}selected{% endif %}>Kitchen Renovation</option>
+                                    <option value="Bathroom Remodeling" {% if ai_results.project_type == 'Bathroom Remodeling' %}selected{% endif %}>Bathroom Remodeling</option>
+                                    <option value="Plumbing" {% if ai_results.project_type == 'Plumbing' %}selected{% endif %}>Plumbing</option>
+                                    <option value="Electrical" {% if ai_results.project_type == 'Electrical' %}selected{% endif %}>Electrical</option>
+                                    <option value="Painting" {% if ai_results.project_type == 'Painting' %}selected{% endif %}>Painting</option>
+                                    <option value="Flooring" {% if ai_results.project_type == 'Flooring' %}selected{% endif %}>Flooring</option>
+                                    <option value="Roofing" {% if ai_results.project_type == 'Roofing' %}selected{% endif %}>Roofing</option>
+                                    <option value="HVAC" {% if ai_results.project_type == 'HVAC' %}selected{% endif %}>HVAC</option>
+                                    <option value="Landscaping" {% if ai_results.project_type == 'Landscaping' %}selected{% endif %}>Landscaping</option>
+                                    <option value="General" {% if ai_results.project_type == 'General' or not ai_results.project_type %}selected{% endif %}>General</option>
+                                </select>
+                            </div>
+                            
+                            <!-- Location -->
+                            <div class="col-md-6">
+                                <label for="location" class="form-label">Location *</label>
+                                <input type="text" class="form-control" id="location" name="location" 
+                                       value="{{ ai_results.location or current_user.location or '' }}" 
+                                       placeholder="City, State" required>
+                                <div class="form-text">Where is this project located?</div>
+                            </div>
+                            
+                            <!-- Project Description -->
+                            <div class="col-12">
+                                <label for="description" class="form-label">Project Description *</label>
+                                <textarea class="form-control" id="description" name="description" rows="5" required>{{ ai_results.description or ai_results.transcribed_text }}</textarea>
+                                <div class="form-text">Detailed description of the work needed</div>
+                            </div>
+                            
+                            <!-- Budget Range -->
+                            <div class="col-md-6">
+                                <label for="budget_min" class="form-label">Minimum Budget</label>
+                                <div class="input-group">
+                                    <span class="input-group-text">$</span>
+                                    <input type="number" class="form-control" id="budget_min" name="budget_min" 
+                                           value="{{ ai_results.budget_min or '' }}" min="0">
+                                </div>
+                                <div class="form-text">Optional: Minimum budget you're willing to spend</div>
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <label for="budget_max" class="form-label">Maximum Budget</label>
+                                <div class="input-group">
+                                    <span class="input-group-text">$</span>
+                                    <input type="number" class="form-control" id="budget_max" name="budget_max" 
+                                           value="{{ ai_results.budget_max or '' }}" min="0">
+                                </div>
+                                <div class="form-text">Optional: Maximum budget you're willing to spend</div>
+                            </div>
+                            
+                            <!-- Timeline -->
+                            <div class="col-12">
+                                <label for="timeline" class="form-label">Timeline</label>
+                                <input type="text" class="form-control" id="timeline" name="timeline" 
+                                       value="{{ ai_results.timeline or '' }}" 
+                                       placeholder="e.g., 2 weeks, 1 month, flexible, ASAP">
+                                <div class="form-text">When do you need this project completed?</div>
+                            </div>
+                        </div>
+                        
+                        <!-- AI Confidence Indicators -->
+                        <div class="mt-4">
+                            <h6><i class="fas fa-chart-bar me-2"></i>AI Confidence Levels</h6>
+                            <div class="row g-2">
+                                <div class="col-md-3">
+                                    <div class="text-center">
+                                        <div class="progress mb-1" style="height: 8px;">
+                                            <div class="progress-bar bg-success" style="width: 95%"></div>
+                                        </div>
+                                        <small class="text-muted">Project Type: 95%</small>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="text-center">
+                                        <div class="progress mb-1" style="height: 8px;">
+                                            <div class="progress-bar bg-warning" style="width: 78%"></div>
+                                        </div>
+                                        <small class="text-muted">Budget: 78%</small>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="text-center">
+                                        <div class="progress mb-1" style="height: 8px;">
+                                            <div class="progress-bar bg-info" style="width: 85%"></div>
+                                        </div>
+                                        <small class="text-muted">Timeline: 85%</small>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="text-center">
+                                        <div class="progress mb-1" style="height: 8px;">
+                                            <div class="progress-bar bg-primary" style="width: 92%"></div>
+                                        </div>
+                                        <small class="text-muted">Scope: 92%</small>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="form-text mt-2">
+                                <i class="fas fa-info-circle me-1"></i>
+                                These percentages indicate how confident our AI is about each extracted detail. Lower confidence means you should double-check the information.
+                            </div>
+                        </div>
+                        
+                        <!-- Action Buttons -->
+                        <div class="d-flex justify-content-between mt-4 pt-3 border-top">
+                            <a href="{{ url_for('submit_project') }}" class="btn btn-outline-secondary">
+                                <i class="fas fa-arrow-left me-2"></i>Back to Submission
+                            </a>
+                            <div class="d-flex gap-2">
+                                <button type="button" class="btn btn-outline-primary" onclick="previewProject()">
+                                    <i class="fas fa-eye me-2"></i>Preview
+                                </button>
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-check me-2"></i>Post Project
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            
+            <!-- Tips for Better Results -->
+            <div class="card bg-light mt-4">
+                <div class="card-body">
+                    <h6><i class="fas fa-lightbulb me-2"></i>Tips for Better Contractor Responses</h6>
+                    <ul class="mb-0 small">
+                        <li><strong>Be specific:</strong> The more details you provide, the more accurate bids you'll receive</li>
+                        <li><strong>Set realistic budgets:</strong> This helps contractors determine if they're a good fit</li>
+                        <li><strong>Include timeline flexibility:</strong> Contractors appreciate knowing your urgency level</li>
+                        <li><strong>Mention special requirements:</strong> Permits, materials, access restrictions, etc.</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Preview Modal -->
+<div class="modal fade" id="previewModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Project Preview</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="card">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-start mb-3">
+                            <h5 class="card-title mb-0" id="preview-title"></h5>
+                            <span class="badge bg-primary" id="preview-type"></span>
+                        </div>
+                        
+                        <p class="card-text" id="preview-description"></p>
+                        
+                        <div class="row g-2 mb-3">
+                            <div class="col-6">
+                                <small class="text-muted d-block"><i class="fas fa-map-marker-alt me-1"></i>Location</small>
+                                <strong id="preview-location"></strong>
+                            </div>
+                            <div class="col-6">
+                                <small class="text-muted d-block"><i class="fas fa-dollar-sign me-1"></i>Budget</small>
+                                <strong id="preview-budget"></strong>
+                            </div>
+                        </div>
+                        
+                        <div class="row g-2">
+                            <div class="col-6">
+                                <small class="text-muted d-block"><i class="fas fa-clock me-1"></i>Timeline</small>
+                                <strong id="preview-timeline"></strong>
+                            </div>
+                            <div class="col-6">
+                                <small class="text-muted d-block"><i class="fas fa-calendar me-1"></i>Posted</small>
+                                <strong>Just now</strong>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary" onclick="document.querySelector('form').submit()">
+                    <i class="fas fa-check me-2"></i>Looks Good, Post It!
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function previewProject() {
+    // Get form values
+    const title = document.getElementById('title').value;
+    const type = document.getElementById('project_type').value;
+    const description = document.getElementById('description').value;
+    const location = document.getElementById('location').value;
+    const budgetMin = document.getElementById('budget_min').value;
+    const budgetMax = document.getElementById('budget_max').value;
+    const timeline = document.getElementById('timeline').value;
+    
+    // Update preview modal
+    document.getElementById('preview-title').textContent = title;
+    document.getElementById('preview-type').textContent = type;
+    document.getElementById('preview-description').textContent = description;
+    document.getElementById('preview-location').textContent = location;
+    document.getElementById('preview-timeline').textContent = timeline || 'Flexible';
+    
+    // Format budget
+    let budgetText = 'Negotiable';
+    if (budgetMin && budgetMax) {
+        budgetText = `$${parseInt(budgetMin).toLocaleString()} - $${parseInt(budgetMax).toLocaleString()}`;
+    } else if (budgetMax) {
+        budgetText = `Up to $${parseInt(budgetMax).toLocaleString()}`;
+    } else if (budgetMin) {
+        budgetText = `Starting at $${parseInt(budgetMin).toLocaleString()}`;
+    }
+    document.getElementById('preview-budget').textContent = budgetText;
+    
+    // Show modal
+    const modal = new bootstrap.Modal(document.getElementById('previewModal'));
+    modal.show();
+}
+
+// Auto-update title based on project type
+document.getElementById('project_type').addEventListener('change', function() {
+    const titleField = document.getElementById('title');
+    if (titleField.value.endsWith(' Project')) {
+        titleField.value = this.value + ' Project';
+    }
+});
+
+// Budget validation
+document.getElementById('budget_min').addEventListener('input', function() {
+    const budgetMax = document.getElementById('budget_max');
+    if (this.value && budgetMax.value && parseInt(this.value) > parseInt(budgetMax.value)) {
+        budgetMax.value = this.value;
+    }
+});
+
+document.getElementById('budget_max').addEventListener('input', function() {
+    const budgetMin = document.getElementById('budget_min');
+    if (this.value && budgetMin.value && parseInt(this.value) < parseInt(budgetMin.value)) {
+        budgetMin.value = this.value;
+    }
+});
+</script>
+{% endblock %}
